@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.1
+    Version:         0.2
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
@@ -76,9 +76,15 @@ function Invoke-BlobItems {
      }
 }
 
+function Get-TimeStamp {
+    return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
+}
+
 New-Item -ItemType Directory -Path "$env:TEMP\printerDeploy" -Force
 Invoke-BlobItems -URL $blobSAS -Path "$env:TEMP\printerDeploy" | Out-Null
 Start-Sleep -s 300
+
+$logFile = "$env:TEMP\printerDeploy\printerDeploy.log"
 
 $printers = Import-Csv -Path "$env:TEMP\printerDeploy\printerDeploy.csv" -ErrorVariable PrinterDeployError
 
@@ -91,7 +97,7 @@ ForEach($printer in $printers) {
     $driverPath = "$env:TEMP\printerDeploy\" + $printer.DriverFilePath
 
     $printerIP = $printer.PrinterIP
-    If($printerstatus -eq $null) {
+    If(!($printerstatus)) {
 
         # Install printer per Install-LocalPrinter function defined.
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
@@ -99,7 +105,8 @@ ForEach($printer in $printers) {
         # Check to see that printer was successfully installed.
         If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
             
-            Write-Error $printer.PrinterName " failed to be deployed."
+            $deployError = $printer.PrinterName + " failed to be redeployed."
+            Write-Output "$(Get-TimeStamp) - $deployError" | Out-File $logFile -Append
 
         }
 
@@ -112,13 +119,15 @@ ForEach($printer in $printers) {
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
         If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
 
-            Write-Error $printer.PrinterName " failed to be redeployed."
+            $deployError = $printer.PrinterName + " failed to be redeployed."
+            Write-Output "$(Get-TimeStamp) - $deployError" | Out-File $logFile -Append
         
         }
 
     } else { 
         
-        Write-Output $printer.PrinterName " is already installed. Moving on..."
+        $deployOutput = $printer.PrinterName + " is already installed. Moving on..."
+        Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
 
     }
 
