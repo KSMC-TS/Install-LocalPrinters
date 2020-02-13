@@ -24,7 +24,7 @@
     Version:         0.1
     Author:          Zachary Choate
     Creation Date:   02/12/2020
-    URL:             
+    URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
 #>
 
 param(
