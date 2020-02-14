@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.2
+    Version:         0.3
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
@@ -101,7 +101,8 @@ ForEach($printer in $printers) {
 
         # Install printer per Install-LocalPrinter function defined.
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
-
+        Start-Sleep -Seconds 30
+        
         # Check to see that printer was successfully installed.
         If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
             
@@ -116,7 +117,9 @@ ForEach($printer in $printers) {
         # Remove printer and install printer with updated parameters. This can probably be written to update the existing printer but for time, this is quickest.
         ## Opportunity for rewrite.
         Remove-Printer -Name $printerstatus.Name
+        Start-Sleep -Seconds 10
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
+        Start-Sleep -Seconds 30
         If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
 
             $deployError = $printer.PrinterName + " failed to be redeployed."
