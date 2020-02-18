@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.3
+    Version:         0.4
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
@@ -37,7 +37,7 @@ function Install-LocalPrinter {
     Param($driverName,$driverFilePath,$printerIP,$printerName)
 
     #Install Printer Driver using PNP and Add-PrinterDriver
-    $pnpOutput = pnputil -a $driverFilePath | Select-String "Published name"
+    $pnpOutput = Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -PassThru -Wait | Select-String "Published name"
     $null = $pnpOutput -match "Published name :\s*(?<name>.*\.inf)"
     $driverINF = Get-ChildItem -Path C:\Windows\INF\$($matches.Name)
     Add-PrinterDriver -Name $driverName -InfPath $driverINF
