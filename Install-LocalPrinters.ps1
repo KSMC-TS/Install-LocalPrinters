@@ -37,9 +37,10 @@ function Install-LocalPrinter {
     Param($driverName,$driverFilePath,$printerIP,$printerName)
 
     #Install Printer Driver using PNP and Add-PrinterDriver
-    $pnpOutput = Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -PassThru -Wait | Select-String "Published name"
-    $null = $pnpOutput -match "Published name :\s*(?<name>.*\.inf)"
-    $driverINF = Get-ChildItem -Path C:\Windows\INF\$($matches.Name)
+    Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -RedirectStandardOutput "$env:TEMP\printerDeploy\pnpOutput.txt" -Wait 
+    $pnpOutput = (Get-Content "$env:TEMP\printerDeploy\pnpOutput.txt") -match "Published name:\s*(?<name>.*\.inf)" | Out-String
+    $driverInf = ($pnpOutput.Split(":") -match ".inf").Trim()
+    $driverInf = "C:\Windows\INF\$driverInf"
     Add-PrinterDriver -Name $driverName -InfPath $driverINF
 
     #Install Printer Port and Printer
