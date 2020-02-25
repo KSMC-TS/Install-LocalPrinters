@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.6
+    Version:         0.7
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
