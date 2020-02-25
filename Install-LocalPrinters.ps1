@@ -37,8 +37,8 @@ function Install-LocalPrinter {
     Param($driverName,$driverFilePath,$printerIP,$printerName)
 
     #Install Printer Driver using PNP and Add-PrinterDriver
-    Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -RedirectStandardOutput "$env:TEMP\printerDeploy\pnpOutput.txt" -Wait -PassThru
-    $pnpOutput = (Get-Content "$env:TEMP\printerDeploy\pnpOutput.txt") -match "Published name:\s*(?<name>.*\.inf)" | Out-String
+    Start-Process "$env:WINDIR\sysnative\windowspowershell\v1.0\powershell.exe" -WorkingDirectory "$env:Temp\printerDeploy" -ArgumentList "pnputil /add-driver $driverFilePath /install /force" | Out-File -FilePath "$env:TEMP\printerDeploy\pnpOutput.txt" -NoNewWindow -Wait
+    [string]$pnpOutput = (Get-Content "$env:TEMP\printerDeploy\pnpOutput.txt") -match "Published name:\s*(?<name>.*\.inf)"
     $driverInf = ($pnpOutput.Split(":") -match ".inf").Trim()
     $driverInf = "C:\Windows\INF\$driverInf"
     Add-PrinterDriver -Name $driverName -InfPath $driverINF
