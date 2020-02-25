@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.4
+    Version:         0.5
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
@@ -37,7 +37,7 @@ function Install-LocalPrinter {
     Param($driverName,$driverFilePath,$printerIP,$printerName)
 
     #Install Printer Driver using PNP and Add-PrinterDriver
-    Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -RedirectStandardOutput "$env:TEMP\printerDeploy\pnpOutput.txt" -Wait 
+    Start-Process pnputil -ArgumentList "/add-driver", $driverFilePath, "/force" -NoNewWindow -RedirectStandardOutput "$env:TEMP\printerDeploy\pnpOutput.txt" -Wait -PassThru
     $pnpOutput = (Get-Content "$env:TEMP\printerDeploy\pnpOutput.txt") -match "Published name:\s*(?<name>.*\.inf)" | Out-String
     $driverInf = ($pnpOutput.Split(":") -match ".inf").Trim()
     $driverInf = "C:\Windows\INF\$driverInf"
@@ -144,6 +144,5 @@ If($PrinterDeployError) {
 }
 
 Remove-Item -Recurse -Path "$env:TEMP\printerDeploy" -Force
-Set-Location HKLM:
-New-Item -Path .\SOFTWARE -Name "printerDeploy" -Value $deployDate -Force
+New-Item -Path HKLM:\SOFTWARE -Name "printerDeploy" -Value $deployDate -Force
 Exit 0
