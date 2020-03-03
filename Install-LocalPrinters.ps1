@@ -45,9 +45,9 @@ function Install-LocalPrinter {
 
     #Install Printer Port and Printer
     $printerPortStatus = Get-PrinterPort -Name "IP_$printerIP" -ErrorAction Ignore
-    Add-PrinterPort -Name "IP_$printerIP" -PrinterHostAddress "IP_$printerIP" -ErrorAction Ignore
+    Add-PrinterPort -Name "IP_$printerIP" -PrinterHostAddress "$printerIP" -ErrorAction Ignore
     Start-Sleep 10
-    Add-Printer -Name $printerName -ShareName $printerName  -PortName "IP_$printerIP" -DriverName $driverName
+    Add-Printer -Name $printerName -PortName "IP_$printerIP" -DriverName $driverName
 }
 
 function Invoke-BlobItems {  
