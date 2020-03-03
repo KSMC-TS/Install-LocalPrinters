@@ -21,7 +21,7 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         0.8
+    Version:         1.0
     Author:          Zachary Choate
     Creation Date:   02/12/2020
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
@@ -91,14 +91,17 @@ $printers = Import-Csv -Path "$env:TEMP\printerDeploy\printerDeploy.csv" -ErrorV
 
 ForEach($printer in $printers) {
 
+    $printerIP = $printer.PrinterIP
+
     # Check to make sure printer isn't already installed - if it is, check other parameters in the event of a printer redeployment
-    $printerstatus = Get-Printer -Name $printer.PrinterName -ErrorAction Ignore
+    $printerbyName = Get-Printer -Name $printer.PrinterName -ErrorAction Ignore
+    $printerbyPort = Get-Printer | Where-Object {$_.PortName -like "*$printerIP"} -ErrorAction Ignore
+    $printerbyIP = Get-PrinterPort | Where-Object {$_.PrinterHostAddress -eq $printer.PrinterIP} -ErrorAction Ignore
 
     # Create path for printer driver
     $driverPath = "$env:TEMP\printerDeploy\" + $printer.DriverFilePath
 
-    $printerIP = $printer.PrinterIP
-    If(!($printerstatus)) {
+    If(!($printerbyName)) {
 
         # Install printer per Install-LocalPrinter function defined.
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
@@ -112,12 +115,55 @@ ForEach($printer in $printers) {
 
         }
 
-    # Look at currently installed printer and compare driver and printer port - if they don't match, let's redeploy.
-    } elseif(($printerstatus.DriverName -notlike $printer.DriverName) -or ($printerstatus.PortName -notlike "*$printerIP*")) {
+    # Look at currently installed printer and compare driver, printer port, and IP - if they don't match, let's redeploy.
+    } elseif($printerbyName.DriverName -notlike $printer.DriverName) {
 
-        # Remove printer and install printer with updated parameters. This can probably be written to update the existing printer but for time, this is quickest.
-        ## Opportunity for rewrite.
-        Remove-Printer -Name $printerstatus.Name
+        # Remove printer and install printer with updated parameters.
+        Remove-Printer -Name $printerbyName.Name
+        Start-Sleep -Seconds 10
+        Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
+        Start-Sleep -Seconds 30
+        If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
+
+            $deployError = $printer.PrinterName + " failed to be redeployed."
+            Write-Output "$(Get-TimeStamp) - $deployError" | Out-File $logFile -Append
+        
+        }
+
+    } elseif(!($printerbyPort)) {
+
+        # Remove printer associated with port and associated port. Install with updated parameters.
+        $currentPrinter = Get-Printer -Name $printer.PrinterName
+        Remove-Printer -Name $printer.PrinterName
+        Start-Sleep -Seconds 10
+        Try { Remove-PrinterPort -Name $currentPrinter.PortName } catch {
+            Get-Printer | Where-Object {$_.PortName -like $currentPrinter.PortName} | Remove-Printer
+            Start-Sleep -Seconds 10
+            Restart-Service -Name Spooler
+            Remove-PrinterPort -Name $currentPrinter.PortName
+        }
+        Start-Sleep -Seconds 10
+        Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
+        Start-Sleep -Seconds 30
+        If(!(Get-Printer -Name $printer.PrinterName -ErrorVariable PrinterDeployError -ErrorAction SilentlyContinue)) {
+
+            $deployError = $printer.PrinterName + " failed to be redeployed."
+            Write-Output "$(Get-TimeStamp) - $deployError" | Out-File $logFile -Append
+        
+        }
+
+    } elseif(!($printerbyIP)) {
+
+        # Remove printer associated with IP and associated port. Install with updated parameters.
+        $currentPrinter = Get-Printer -Name $printer.PrinterName
+        Remove-Printer -Name $printer.PrinterName
+        Start-Sleep -Seconds 10
+        Try { Remove-PrinterPort -Name $currentPrinter.PortName } catch {
+            Get-Printer | Where-Object {$_.PortName -like $currentPrinter.PortName} | Remove-Printer
+            Start-Sleep -Seconds 10
+            Restart-Service -Name Spooler
+            Remove-PrinterPort -Name $currentPrinter.PortName
+        }
         Start-Sleep -Seconds 10
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
         Start-Sleep -Seconds 30
