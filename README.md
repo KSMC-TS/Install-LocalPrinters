@@ -26,11 +26,11 @@ Install printers staged in Azure Blob Storage for deployment in Intune
   - printerDeploy.csv with printers to be deployed/redeployed
   - folders for each printer containing driver files
 ## PARAMETER deployDate
-- This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
+- This will set a registry key at HKLM:\SOFTWARE\WOW6432Node\printerDeploy with the value specified here.
 - Use this as a check that the most current deployment is installed.
 ## NOTES
     Version:         1.5
-    Last updated:    03/03/2020
+    Last updated:    03/04/2020
     Creation Date:   02/12/2020
     Author:          Zachary Choate
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
