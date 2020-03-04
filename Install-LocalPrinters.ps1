@@ -11,6 +11,16 @@
         printerIP - IP address of the printer
         driverFilePath - path to driver (inf and other dependent files) - printernamefolder\printerdriver.inf
         driverName - name found under [strings] within the INF file - HP OfficeJet Pro 8020 would be HP OfficeJet Pro 8020 series
+        colorSetting:
+            - valid values: Grayscale, Color, Monochrome
+            - refer to https://docs.microsoft.com/en-us/windows/win32/printdocs/pageoutputcolor
+        duplexSetting:
+            - valid values: OneSided, TwoSidedShortEdge, TwoSidedLongEdge
+            - refer to https://docs.microsoft.com/en-us/windows/win32/printdocs/jobduplexalldocumentscontiguously
+        stapleSetting:
+            - valid values: None, StapleTopLeft, StapleTopRight, StapleBottomLeft, StapleBottomRight, StapleDualLeft,
+StapleDualRight, StapleDualTop, StapleDualBottom
+            - refer to https://docs.microsoft.com/en-us/windows/win32/printdocs/jobstaplealldocuments
 .PARAMETER blobSAS
     This should be the URL that the contents of the printer deployment are to be downloaded from.
     For Azure: container URL + SAS token
@@ -21,15 +31,17 @@
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
 .NOTES
-    Version:         1.0
-    Author:          Zachary Choate
+    Version:         1.5
+    Last updated:    03/03/2020
     Creation Date:   02/12/2020
+    Author:          Zachary Choate
     URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
 #>
 
 param(
     [string] $blobSAS,
-    [string] $deployDate
+    [string] $deployDate,
+    [string] $defaultPrinter
     )
 
 function Install-LocalPrinter {
@@ -81,6 +93,24 @@ function Get-TimeStamp {
     return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
 }
 
+function Set-PrintConfigurationSetting {
+    param(
+        [string] $printerName,
+        [string] $configSetting,
+        [string] $configValue
+    )
+
+        # Get current printer configuration defaults
+        $printerConfig = Get-PrintConfiguration -PrinterName $printerName
+        $printerConfigXML = [xml]$printerConfig.PrintTicketXML
+        # Pull the specific setting that we're changing
+        $settingConfig = ($printerConfigXML.PrintTicket.Feature).Where({$_.name -eq "$configSetting"}).option.name
+        # Stage the updated setting in the Print Ticket XML.
+        $updatedConfig = $printerConfig.PrintTicketXML -replace "$settingConfig","psk:$configValue"
+        # Apply the updated print setting.
+        Set-PrintConfiguration -PrinterName $printerName -PrintTicketXml $updatedConfig
+}
+
 New-Item -ItemType Directory -Path "$env:TEMP\printerDeploy" -Force
 Invoke-BlobItems -URL $blobSAS -Path "$env:TEMP\printerDeploy" | Out-Null
 Start-Sleep -s 300
@@ -119,7 +149,15 @@ ForEach($printer in $printers) {
     } elseif($printerbyName.DriverName -notlike $printer.DriverName) {
 
         # Remove printer and install printer with updated parameters.
+        $currentPrinter = Get-Printer -Name $printer.PrinterName
         Remove-Printer -Name $printerbyName.Name
+        Start-Sleep -Seconds 10
+        Try { Remove-PrinterPort -Name $currentPrinter.PortName } catch {
+            Get-Printer | Where-Object {$_.PortName -like $currentPrinter.PortName} | Remove-Printer
+            Start-Sleep -Seconds 10
+            Restart-Service -Name Spooler
+            Remove-PrinterPort -Name $currentPrinter.PortName
+        }
         Start-Sleep -Seconds 10
         Install-LocalPrinter -driverName $printer.DriverName -driverFilePath $driverPath -printerIP $printer.PrinterIP -printerName $printer.PrinterName
         Start-Sleep -Seconds 30
@@ -176,7 +214,35 @@ ForEach($printer in $printers) {
 
     } else { 
         
-        $deployOutput = $printer.PrinterName + " is already installed. Moving on..."
+        # If we're here the printer was likely already deployed - updating log file and skipping.
+        $deployOutput = $printer.PrinterName + " is already installed."
+        Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
+
+    }
+
+    # Set the default color setting for the printer if specified.
+    If($printer.ColorSetting) {
+
+        Set-PrintConfigurationSetting -printerName $printer.PrinterName -configSetting "psk:PageOutputColor" -configValue $printer.ColorSetting
+        $deployOutput = $printer.PrinterName + " has had the color default set."
+        Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
+
+    }
+
+    # Set the default duplex setting for the printer if specified.
+    If($printer.DuplexSetting) {
+
+        Set-PrintConfigurationSetting -printerName $printer.PrinterName -configSetting "psk:JobDuplexAllDocumentsContiguously" -configValue $printer.DuplexSetting
+        $deployOutput = $printer.PrinterName + " has had the duplex default set."
+        Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
+
+    }
+
+    # Set the default staple setting for the printer if specified.
+    If($printer.StapleSetting) {
+
+        Set-PrintConfigurationSetting -printerName $printer.PrinterName -configSetting "psk:JobStapleAllDocuments" -configValue $printer.StapleSetting
+        $deployOutput = $printer.PrinterName + " has had the staple default set."
         Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
 
     }
