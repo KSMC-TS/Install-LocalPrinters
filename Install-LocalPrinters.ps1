@@ -40,8 +40,7 @@ StapleDualRight, StapleDualTop, StapleDualBottom
 
 param(
     [string] $blobSAS,
-    [string] $deployDate,
-    [string] $defaultPrinter
+    [string] $deployDate
     )
 
 function Install-LocalPrinter {
