@@ -118,7 +118,7 @@ function Set-PrintConfigurationSetting {
         $printerConfig = Get-PrintConfiguration -PrinterName $printerName
         $printerConfigXML = [xml]$printerConfig.PrintTicketXML
         # Pull the specific setting that we're changing
-        $settingConfig = ($printerConfigXML.PrintTicketFeature).Where({$_.name -eq "$configSetting"}).option.name
+        $settingConfig = ($printerConfigXML.PrintTicket.Feature).Where({$_.name -eq "$configSetting"}).option.name
         # Stage the updated setting in the Print Ticket XML.
         $updatedConfig = $printerConfig.PrintTicketXML -replace "$settingConfig","psk:$configValue"
         # Apply the updated print setting.
