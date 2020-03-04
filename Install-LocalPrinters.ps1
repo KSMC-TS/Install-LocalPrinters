@@ -30,9 +30,6 @@ StapleDualRight, StapleDualTop, StapleDualBottom
 .PARAMETER deployDate
     This will set a registry key at HKLM:\SOFTWARE\printerDeploy with the value specified here.
     Use this as a check that the most current deployment is installed.
-.PARAMETER defaultPrinter
-    Specify the name of the printer that should be set as the default.
-    This should be identical to the name of a printer deployed via this script or that is already installed.
 .NOTES
     Version:         1.5
     Last updated:    03/03/2020
@@ -94,17 +91,6 @@ function Invoke-BlobItems {
 
 function Get-TimeStamp {
     return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
-}
-
-function Set-DefaultPrinter {
-    param(
-        [string] $defaultPrinter
-    )
-
-    $Printers = Get-WmiObject -Class Win32_Printer
-    $Printer = $Printers | Where-Object {$_.Name -eq "$defaultPrinter"}
-    $Printer.SetDefaultPrinter() | Out-Null
-    
 }
 
 function Set-PrintConfigurationSetting {
@@ -260,18 +246,6 @@ ForEach($printer in $printers) {
         Write-Output "$(Get-TimeStamp) - $deployOutput" | Out-File $logFile -Append
 
     }
-
-}
-
-# Set default printer if specified
-If(!($defaultPrinter)) {
-
-    Write-Output "$(Get-TimeStamp) - No default printer set, skipping..." | Out-File $logFile -Append
-
-} else {
-
-    Set-DefaultPrinter -defaultPrinter $defaultPrinter
-    Write-Output "$(Get-TimeStamp) - $defaultPrinter was set as the default printer." | Out-File $logFile -Append
 
 }
 
