@@ -33,4 +33,4 @@ Install printers staged in Azure Blob Storage for deployment in Intune
     Last updated:    03/04/2020
     Creation Date:   02/12/2020
     Author:          Zachary Choate
-    URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/master/Install-LocalPrinters.ps1
+    URL:             https://raw.githubusercontent.com/zchoate/Install-LocalPrinters/main/Install-LocalPrinters.ps1
