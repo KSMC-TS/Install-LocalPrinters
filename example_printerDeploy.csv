@@ -1,4 +1,5 @@
-printerName,printerIP,driverFilePath,driverName,colorSetting,duplexSetting,stapleSetting
-Copy Room Printer,192.168.1.10,sharp-ud\sfwemenu.inf,SHARP UD2 PCL6,Grayscale,TwoSidedLongEdge,StapleTopLeft
-Marketing Printer,192.168.1.12,sharp-ud\sfwemenu.inf,SHARP UD2 PCL6,Color,,
-Exec Printer,192.168.1.15,sharp-ud\sfwemenu.inf,SHARP UD2 PCL6,,,
+install,printerName,printerIP,driverFilePath,driverName,colorSetting,duplexSetting,stapleSetting,custSharpUd3Staple,custSharpUd3Punch
+1,Copy Room Printer,192.168.1.10,sharp-ud\sfwemenu.inf,SHARP UD2 PCL6,Grayscale,TwoSidedLongEdge,StapleTopLeft,,
+1,Marketing Printer,192.168.1.12,sharp-ud\sfwemenu.inf,SHARP UD3 PCL6,Color,,,1 Staple, 3 Holes
+1,Exec Printer,192.168.1.15,sharp-ud\sfwemenu.inf,SHARP UD3 PCL6,,,,,
+0,Break Room Printer,192.168.1.25,,,,,,,
