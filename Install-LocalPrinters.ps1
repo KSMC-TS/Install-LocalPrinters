@@ -37,7 +37,8 @@ StapleDualRight, StapleDualTop, StapleDualBottom
         printerDeploy.csv with printers to be deployed/redeployed
         folders for each printer containing driver files
 .PARAMETER deployDate
-    This will set a registry key at HKLM:\SOFTWARE\PrinterDeploy with the value specified here.
+    This will set a registry key at HKLM:\SOFTWARE\printerDeploy with a name of version_applied and the value specified here unless run in by 32-bit Powershell
+then HKLM:\SOFTWARE\WOW6432Node\printerDeploy will be set.
     Use this as a check that the most current deployment is installed.
 .NOTES
 
